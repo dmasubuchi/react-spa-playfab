@@ -10,7 +10,7 @@ interface PlayFabConfig {
 
 // Default configuration
 const defaultConfig: PlayFabConfig = {
-  titleId: process.env.VITE_PLAYFAB_TITLE_ID || 'YOUR_PLAYFAB_TITLE_ID',
+  titleId: (import.meta.env?.VITE_PLAYFAB_TITLE_ID as string) || 'YOUR_PLAYFAB_TITLE_ID',
 };
 
 // PlayFab client class - thin wrapper around PlayFab SDK
