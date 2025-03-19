@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "React SPA with PlayFab integration",
   "dependencies": {
+    "playfab-sdk": "^2.170.250314",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
