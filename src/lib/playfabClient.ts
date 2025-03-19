@@ -7,6 +7,65 @@ interface PlayFabConfig {
   developerSecretKey?: string;
 }
 
+// Define PlayFab result interfaces
+interface PlayFabLoginResult {
+  code: number;
+  status: string;
+  data: {
+    SessionTicket: string;
+    PlayFabId: string;
+    NewlyCreated?: boolean;
+    SettingsForUser?: any;
+    LastLoginTime?: string;
+    InfoResultPayload?: {
+      PlayerProfile?: {
+        DisplayName: string;
+        PlayerId: string;
+      }
+    }
+  };
+}
+
+interface PlayFabRegisterResult {
+  code: number;
+  status: string;
+  data: {
+    SessionTicket: string;
+    PlayFabId: string;
+    Username?: string;
+  };
+}
+
+interface PlayFabUserDataResult {
+  code: number;
+  status: string;
+  data: {
+    Data: {
+      [key: string]: {
+        Value: string;
+        LastUpdated: string;
+        Permission: string;
+      }
+    }
+  };
+}
+
+interface PlayFabUpdateResult {
+  code: number;
+  status: string;
+  data: {
+    DataVersion: number;
+  };
+}
+
+interface PlayFabError {
+  code: number;
+  status: string;
+  error: string;
+  errorCode: number;
+  errorMessage: string;
+}
+
 // Default configuration
 const defaultConfig: PlayFabConfig = {
   titleId: process.env.VITE_PLAYFAB_TITLE_ID || 'YOUR_PLAYFAB_TITLE_ID',
@@ -41,7 +100,11 @@ export class PlayFabClient {
   }
   
   // Login with email and password
-  async loginWithEmailAddress(email: string, password: string): Promise<any> {
+  async loginWithEmailAddress(email: string, password: string): Promise<{
+    sessionTicket: string;
+    playFabId: string;
+    displayName: string;
+  }> {
     console.log(`Logging in with email: ${email}`);
     
     return new Promise((resolve, reject) => {
@@ -69,14 +132,17 @@ export class PlayFabClient {
         },
         (error: any) => {
           console.error('Login failed:', error);
-          reject(error);
+          reject(new Error(error.errorMessage || 'Login failed'));
         }
       );
     });
   }
   
   // Register a new PlayFab user
-  async registerPlayFabUser(email: string, password: string, displayName: string): Promise<any> {
+  async registerPlayFabUser(email: string, password: string, displayName: string): Promise<{
+    sessionTicket: string;
+    playFabId: string;
+  }> {
     console.log(`Registering user with email: ${email}, displayName: ${displayName}`);
     
     return new Promise((resolve, reject) => {
@@ -103,14 +169,16 @@ export class PlayFabClient {
         },
         (error: any) => {
           console.error('Registration failed:', error);
-          reject(error);
+          reject(new Error(error.errorMessage || 'Registration failed'));
         }
       );
     });
   }
   
   // Get player data from PlayFab
-  async getPlayerData(keys: string[]): Promise<any> {
+  async getPlayerData(keys: string[]): Promise<{
+    data: Record<string, string>;
+  }> {
     console.log(`Getting player data for keys: ${keys.join(', ')}`);
     
     // Check if session ticket exists
@@ -143,14 +211,16 @@ export class PlayFabClient {
         },
         (error: any) => {
           console.error('Get player data failed:', error);
-          reject(error);
+          reject(new Error(error.errorMessage || 'Failed to get player data'));
         }
       );
     });
   }
   
   // Update player data in PlayFab
-  async updatePlayerData(data: Record<string, string>): Promise<any> {
+  async updatePlayerData(data: Record<string, string>): Promise<{
+    dataVersion: number;
+  }> {
     console.log(`Updating player data with keys: ${Object.keys(data).join(', ')}`);
     
     // Check if session ticket exists
@@ -168,14 +238,16 @@ export class PlayFabClient {
         updateDataRequest,
         (result: any) => {
           if (result.data) {
-            resolve(result.data);
+            resolve({
+              dataVersion: result.data.DataVersion
+            });
           } else {
             reject(new Error('Update player data failed: No data returned'));
           }
         },
         (error: any) => {
           console.error('Update player data failed:', error);
-          reject(error);
+          reject(new Error(error.errorMessage || 'Failed to update player data'));
         }
       );
     });
