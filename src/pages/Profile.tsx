@@ -1,30 +1,30 @@
 import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import ProfileForm from '../components/profile/ProfileForm';
 
 const Profile: React.FC = () => {
+  const { authState, logout } = useAuth();
+
   return (
     <div className="profile-page">
       <h1>User Profile</h1>
-      <div className="profile-container">
-        <div className="profile-image">
-          <div className="image-placeholder">
-            <span>Profile Image</span>
+      
+      {authState.isAuthenticated ? (
+        <div className="profile-container">
+          <div className="profile-header">
+            <h2>Welcome, {authState.user?.displayName || 'Player'}</h2>
+            <button className="logout-button" onClick={logout}>
+              Logout
+            </button>
           </div>
-          <button className="upload-button">Upload Image</button>
+          
+          <ProfileForm />
         </div>
-        <div className="profile-details">
-          <div className="form-group">
-            <label>Display Name</label>
-            <input type="text" placeholder="Enter display name" />
-          </div>
-          <div className="form-group">
-            <label>Email</label>
-            <input type="email" placeholder="Enter email" disabled />
-          </div>
-          <div className="form-group">
-            <button className="save-button">Save Changes</button>
-          </div>
+      ) : (
+        <div className="profile-container">
+          <p>Please log in to view and edit your profile.</p>
         </div>
-      </div>
+      )}
     </div>
   );
 };
