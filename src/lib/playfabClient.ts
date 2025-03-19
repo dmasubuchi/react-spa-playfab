@@ -1,69 +1,11 @@
 // Import PlayFab SDK
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const PlayFab = require('playfab-sdk');
 
 // Define PlayFab configuration interface
 interface PlayFabConfig {
   titleId: string;
   developerSecretKey?: string;
-}
-
-// Define PlayFab result interfaces
-interface PlayFabLoginResult {
-  code: number;
-  status: string;
-  data: {
-    SessionTicket: string;
-    PlayFabId: string;
-    NewlyCreated?: boolean;
-    SettingsForUser?: any;
-    LastLoginTime?: string;
-    InfoResultPayload?: {
-      PlayerProfile?: {
-        DisplayName: string;
-        PlayerId: string;
-      }
-    }
-  };
-}
-
-interface PlayFabRegisterResult {
-  code: number;
-  status: string;
-  data: {
-    SessionTicket: string;
-    PlayFabId: string;
-    Username?: string;
-  };
-}
-
-interface PlayFabUserDataResult {
-  code: number;
-  status: string;
-  data: {
-    Data: {
-      [key: string]: {
-        Value: string;
-        LastUpdated: string;
-        Permission: string;
-      }
-    }
-  };
-}
-
-interface PlayFabUpdateResult {
-  code: number;
-  status: string;
-  data: {
-    DataVersion: number;
-  };
-}
-
-interface PlayFabError {
-  code: number;
-  status: string;
-  error: string;
-  errorCode: number;
-  errorMessage: string;
 }
 
 // Default configuration
@@ -118,7 +60,7 @@ export class PlayFabClient {
       
       PlayFab.PlayFabClient.LoginWithEmailAddress(
         loginRequest,
-        (result: any) => {
+        (result: { data: { SessionTicket: string; PlayFabId: string; InfoResultPayload?: { PlayerProfile?: { DisplayName: string } } } }) => {
           if (result.data) {
             this.setSessionTicket(result.data.SessionTicket);
             resolve({
@@ -130,7 +72,7 @@ export class PlayFabClient {
             reject(new Error('Login failed: No data returned'));
           }
         },
-        (error: any) => {
+        (error: { errorMessage?: string }) => {
           console.error('Login failed:', error);
           reject(new Error(error.errorMessage || 'Login failed'));
         }
@@ -156,7 +98,7 @@ export class PlayFabClient {
       
       PlayFab.PlayFabClient.RegisterPlayFabUser(
         registerRequest,
-        (result: any) => {
+        (result: { data: { SessionTicket: string; PlayFabId: string } }) => {
           if (result.data) {
             this.setSessionTicket(result.data.SessionTicket);
             resolve({
@@ -167,7 +109,7 @@ export class PlayFabClient {
             reject(new Error('Registration failed: No data returned'));
           }
         },
-        (error: any) => {
+        (error: { errorMessage?: string }) => {
           console.error('Registration failed:', error);
           reject(new Error(error.errorMessage || 'Registration failed'));
         }
@@ -193,23 +135,26 @@ export class PlayFabClient {
       
       PlayFab.PlayFabClient.GetUserData(
         getDataRequest,
-        (result: any) => {
+        (result: { data?: { Data?: Record<string, { Value?: string }> } }) => {
           if (result.data && result.data.Data) {
             const data: Record<string, string> = {};
             
             // Convert PlayFab data format to simple key-value pairs
-            Object.keys(result.data.Data).forEach(key => {
-              if (result.data.Data[key].Value) {
-                data[key] = result.data.Data[key].Value;
-              }
-            });
+            if (result.data && result.data.Data) {
+              const dataObj = result.data.Data;
+              Object.keys(dataObj).forEach(key => {
+                if (dataObj[key]?.Value) {
+                  data[key] = dataObj[key].Value as string;
+                }
+              });
+            }
             
             resolve({ data });
           } else {
             resolve({ data: {} });
           }
         },
-        (error: any) => {
+        (error: { errorMessage?: string }) => {
           console.error('Get player data failed:', error);
           reject(new Error(error.errorMessage || 'Failed to get player data'));
         }
@@ -236,7 +181,7 @@ export class PlayFabClient {
       
       PlayFab.PlayFabClient.UpdateUserData(
         updateDataRequest,
-        (result: any) => {
+        (result: { data?: { DataVersion: number } }) => {
           if (result.data) {
             resolve({
               dataVersion: result.data.DataVersion
@@ -245,7 +190,7 @@ export class PlayFabClient {
             reject(new Error('Update player data failed: No data returned'));
           }
         },
-        (error: any) => {
+        (error: { errorMessage?: string }) => {
           console.error('Update player data failed:', error);
           reject(new Error(error.errorMessage || 'Failed to update player data'));
         }

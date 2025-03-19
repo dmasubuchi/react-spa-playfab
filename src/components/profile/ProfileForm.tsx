@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import PlayFabClient from '../../lib/playfabClient';
 
@@ -22,14 +22,8 @@ const ProfileForm: React.FC = () => {
 
   const playfabClient = new PlayFabClient();
 
-  // Load profile data when component mounts
-  useEffect(() => {
-    if (authState.isAuthenticated && authState.user) {
-      loadProfileData();
-    }
-  }, [authState.isAuthenticated, authState.user]);
-
-  const loadProfileData = async () => {
+  // Define loadProfileData with useCallback to avoid dependency cycle
+  const loadProfileData = useCallback(async () => {
     if (!authState.isAuthenticated) return;
     
     setIsLoading(true);
@@ -49,7 +43,14 @@ const ProfileForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authState.isAuthenticated, authState.user, playfabClient]);
+
+  // Load profile data when component mounts
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user) {
+      loadProfileData();
+    }
+  }, [authState.isAuthenticated, authState.user, loadProfileData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
