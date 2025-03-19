@@ -30,7 +30,7 @@ const defaultConfig: AzureStorageConfig = {
 export class AzureStorageClient {
   public config: AzureStorageConfig;
   private blobServiceClient: typeof BlobServiceClient | null = null;
-  private containerClient: any = null;
+  private containerClient: { getBlockBlobClient: (blobName: string) => { upload: (data: ArrayBuffer, length: number, options?: Record<string, unknown>) => Promise<unknown>; delete: () => Promise<unknown> } } | null = null;
   
   constructor(config: Partial<AzureStorageConfig> = {}) {
     this.config = {
