@@ -1,23 +1,21 @@
 import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import GameBoard from '../components/game/GameBoard';
 
 const Game: React.FC = () => {
+  const { authState } = useAuth();
+  
   return (
     <div className="game-page">
-      <h1>Game</h1>
-      <p>This is where the game will be implemented in Phase 4.</p>
-      <div className="game-container">
-        <div className="game-stats">
-          <p>Score: 0</p>
-          <p>Level: 1</p>
+      {authState.isAuthenticated ? (
+        <GameBoard />
+      ) : (
+        <div className="auth-required">
+          <h2>Authentication Required</h2>
+          <p>Please log in or register to play the game.</p>
+          <p>Your game progress will be saved to your PlayFab account.</p>
         </div>
-        <div className="game-area">
-          <p>Game content will appear here</p>
-        </div>
-        <div className="game-controls">
-          <button className="control-button">Start</button>
-          <button className="control-button">Pause</button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
