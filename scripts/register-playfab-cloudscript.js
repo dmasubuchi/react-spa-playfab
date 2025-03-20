@@ -1,6 +1,7 @@
 // Register Azure Functions with PlayFab as CloudScript
-const fs = require('fs');
-const https = require('https');
+import fs from 'fs';
+import https from 'node:https';
+import { exit } from 'node:process';
 
 // PlayFab API credentials
 const titleId = process.env.PLAYFAB_TITLE_ID || '6D140';
@@ -8,7 +9,7 @@ const developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 
 if (!developerSecretKey) {
   console.error('Error: PLAYFAB_SECRET_KEY environment variable is required');
-  process.exit(1);
+  exit(1);
 }
 
 // Azure Function App details

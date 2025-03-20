@@ -35,6 +35,6 @@ az functionapp config appsettings set --name $FUNCTION_APP_NAME \
 # Deploy the function
 echo "Deploying functions to $FUNCTION_APP_NAME..."
 cd $FUNCTIONS_DIR
-func azure functionapp publish $FUNCTION_APP_NAME --javascript
+npx func azure functionapp publish $FUNCTION_APP_NAME --javascript
 
 echo "Deployment completed."
