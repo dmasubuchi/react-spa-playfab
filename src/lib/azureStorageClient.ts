@@ -5,6 +5,7 @@
 // Note: This requires @azure/storage-blob package to be installed
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { BlobServiceClient, StorageSharedKeyCredential, BlobSASPermissions, generateBlobSASQueryParameters } = require('@azure/storage-blob');
+import AzureKeyVaultClient from './azureKeyVaultClient';
 
 // Define Azure Storage configuration interface
 interface AzureStorageConfig {
@@ -15,12 +16,29 @@ interface AzureStorageConfig {
   cdnEndpoint?: string;
 }
 
-// Default configuration from environment variables
+// Get configuration from environment variables
+const accountName = typeof import.meta.env !== 'undefined' 
+  ? import.meta.env.VITE_AZURE_STORAGE_ACCOUNT 
+  : 'reactspaplayfabstorage';
+
+const accountKey = typeof import.meta.env !== 'undefined' 
+  ? import.meta.env.VITE_AZURE_STORAGE_KEY 
+  : undefined;
+
+const containerName = typeof import.meta.env !== 'undefined' 
+  ? import.meta.env.VITE_AZURE_STORAGE_CONTAINER 
+  : 'profile-images';
+
+const cdnEndpoint = typeof import.meta.env !== 'undefined' 
+  ? import.meta.env.VITE_AZURE_CDN_ENDPOINT 
+  : undefined;
+
+// Default configuration
 const defaultConfig: AzureStorageConfig = {
-  accountName: (import.meta.env?.VITE_AZURE_STORAGE_ACCOUNT as string) || 'YOUR_STORAGE_ACCOUNT_NAME',
-  accountKey: (import.meta.env?.VITE_AZURE_STORAGE_KEY as string) || undefined,
-  containerName: (import.meta.env?.VITE_AZURE_STORAGE_CONTAINER as string) || 'profile-images',
-  cdnEndpoint: (import.meta.env?.VITE_AZURE_CDN_ENDPOINT as string) || undefined,
+  accountName,
+  accountKey,
+  containerName,
+  cdnEndpoint,
 };
 
 /**
@@ -31,6 +49,7 @@ export class AzureStorageClient {
   public config: AzureStorageConfig;
   private blobServiceClient: typeof BlobServiceClient | null = null;
   private containerClient: { getBlockBlobClient: (blobName: string) => { upload: (data: ArrayBuffer, length: number, options?: Record<string, unknown>) => Promise<unknown>; delete: () => Promise<unknown> } } | null = null;
+  private keyVaultClient: AzureKeyVaultClient | null = null;
   
   constructor(config: Partial<AzureStorageConfig> = {}) {
     this.config = {
@@ -38,20 +57,34 @@ export class AzureStorageClient {
       ...config,
     };
     
+    this.keyVaultClient = new AzureKeyVaultClient();
     this.initializeClient();
   }
   
   /**
    * Initialize the Azure Blob Service client
-   * Uses account key if available, otherwise falls back to SAS token
+   * Uses account key from KeyVault if available, otherwise falls back to SAS token
    */
-  private initializeClient(): void {
+  private async initializeClient(): Promise<void> {
     try {
+      let accountKey = this.config.accountKey;
+      
+      // Check if the account key is a KeyVault reference
+      if (accountKey && accountKey.startsWith('@Microsoft.KeyVault') && this.keyVaultClient) {
+        const secretName = AzureKeyVaultClient.parseKeyVaultReference(accountKey);
+        if (secretName) {
+          const secret = await this.keyVaultClient.getSecret(secretName);
+          if (secret) {
+            accountKey = secret;
+          }
+        }
+      }
+      
       // If we have an account key, use SharedKeyCredential
-      if (this.config.accountKey) {
+      if (accountKey) {
         const sharedKeyCredential = new StorageSharedKeyCredential(
           this.config.accountName,
-          this.config.accountKey
+          accountKey
         );
         
         this.blobServiceClient = new BlobServiceClient(
@@ -99,7 +132,20 @@ export class AzureStorageClient {
    * Useful for providing time-limited access to private blobs
    */
   async generateSasUrl(blobName: string, expiryMinutes = 60): Promise<string> {
-    if (!this.config.accountKey) {
+    let accountKey = this.config.accountKey;
+    
+    // Check if the account key is a KeyVault reference
+    if (accountKey && accountKey.startsWith('@Microsoft.KeyVault') && this.keyVaultClient) {
+      const secretName = AzureKeyVaultClient.parseKeyVaultReference(accountKey);
+      if (secretName) {
+        const secret = await this.keyVaultClient.getSecret(secretName);
+        if (secret) {
+          accountKey = secret;
+        }
+      }
+    }
+    
+    if (!accountKey) {
       console.warn('Cannot generate SAS URL without account key');
       return this.getBlobUrl(blobName);
     }
@@ -107,7 +153,7 @@ export class AzureStorageClient {
     try {
       const sharedKeyCredential = new StorageSharedKeyCredential(
         this.config.accountName,
-        this.config.accountKey
+        accountKey
       );
       
       // Set expiry time
