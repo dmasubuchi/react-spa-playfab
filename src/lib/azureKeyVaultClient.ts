@@ -112,7 +112,7 @@ export class AzureKeyVaultClient {
   static parseKeyVaultReference(reference: string): string | null {
     try {
       // Match pattern: @Microsoft.KeyVault(SecretUri=https://vaultname.vault.azure.net/secrets/secretName/version)
-      const match = reference.match(/@Microsoft\.KeyVault\(SecretUri=https:\/\/.*\.vault\.azure\.net\/secrets\/([^\/]+)/);
+      const match = reference.match(/@Microsoft\.KeyVault\(SecretUri=https:\/\/.*\.vault\.azure\.net\/secrets\/([^/]+)/);
       
       if (match && match[1]) {
         return match[1];

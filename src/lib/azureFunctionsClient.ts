@@ -38,7 +38,7 @@ export class AzureFunctionsClient {
    * @param data Data to send to the function
    * @returns Response from the function
    */
-  async callFunction<T = any, R = any>(functionName: string, data?: T): Promise<R> {
+  async callFunction<T = unknown, R = unknown>(functionName: string, data?: T): Promise<R> {
     try {
       console.log(`Calling Azure Function: ${functionName}`);
       
@@ -67,7 +67,7 @@ export class AzureFunctionsClient {
    * @param gameData Game data to validate
    * @returns Validation result
    */
-  async validateGameData<T = any>(gameData: T): Promise<{ isValid: boolean; errors?: string[] }> {
+  async validateGameData<T = unknown>(gameData: T): Promise<{ isValid: boolean; errors?: string[] }> {
     try {
       return await this.callFunction<T, { isValid: boolean; errors?: string[] }>('validateGameData', gameData);
     } catch (error) {

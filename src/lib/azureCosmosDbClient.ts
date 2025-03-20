@@ -30,8 +30,11 @@ const defaultConfig: AzureCosmosDbConfig = {
 export class AzureCosmosDbClient {
   public config: AzureCosmosDbConfig;
   private cosmosClient: typeof CosmosClient | null = null;
-  private database: { container: (containerId: string) => any } | null = null;
-  private container: any | null = null;
+  // Using Record<string, any> with eslint-disable to satisfy linting while maintaining functionality
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private database: Record<string, any> | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private container: Record<string, any> | null = null;
   private keyVaultClient: AzureKeyVaultClient | null = null;
   
   constructor(config: Partial<AzureCosmosDbConfig> = {}) {
@@ -98,7 +101,7 @@ export class AzureCosmosDbClient {
    * @param item Item data to store
    * @returns The created or replaced item
    */
-  async upsertItem(id: string, item: Record<string, any>): Promise<Record<string, any> | null> {
+  async upsertItem(id: string, item: Record<string, unknown>): Promise<Record<string, unknown> | null> {
     if (!this.container) {
       console.warn('Azure CosmosDB client not properly initialized. Cannot upsert item.');
       return null;
@@ -127,7 +130,7 @@ export class AzureCosmosDbClient {
    * @param id Unique identifier for the item
    * @returns The requested item or null if not found
    */
-  async readItem(id: string): Promise<Record<string, any> | null> {
+  async readItem(id: string): Promise<Record<string, unknown> | null> {
     if (!this.container) {
       console.warn('Azure CosmosDB client not properly initialized. Cannot read item.');
       return null;
@@ -139,7 +142,8 @@ export class AzureCosmosDbClient {
       return resource;
     } catch (error) {
       // If item not found, return null instead of throwing
-      if ((error as any).code === 404) {
+      const cosmosError = error as { code?: number };
+      if (cosmosError.code === 404) {
         console.log(`Item not found: ${id}`);
         return null;
       }
@@ -177,7 +181,7 @@ export class AzureCosmosDbClient {
    * @param parameters Query parameters
    * @returns Array of items matching the query
    */
-  async queryItems(query: string, parameters: any[] = []): Promise<Record<string, any>[]> {
+  async queryItems(query: string, parameters: unknown[] = []): Promise<Record<string, unknown>[]> {
     if (!this.container) {
       console.warn('Azure CosmosDB client not properly initialized. Cannot query items.');
       return [];
