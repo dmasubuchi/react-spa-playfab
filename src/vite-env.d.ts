@@ -11,6 +11,7 @@ interface ImportMeta {
     readonly VITE_AZURE_CDN_ENDPOINT: string;
     readonly VITE_AZURE_COSMOSDB_CONNECTION_STRING: string;
     readonly VITE_AZURE_FUNCTIONS_ENDPOINT: string;
+    readonly VITE_AZURE_QUEUE_NAME: string;
     readonly VITE_AZURE_KEYVAULT_NAME: string;
     readonly VITE_AZURE_KEYVAULT_URI: string;
     readonly [key: string]: string | boolean | undefined;

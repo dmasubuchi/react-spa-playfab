@@ -41,6 +41,11 @@ export class PlayFabClient {
     console.log('Session ticket cleared');
   }
   
+  // Check if user is logged in
+  isLoggedIn(): boolean {
+    return this.sessionTicket !== null;
+  }
+  
   // Login with email and password
   async loginWithEmailAddress(email: string, password: string): Promise<{
     sessionTicket: string;
@@ -195,6 +200,47 @@ export class PlayFabClient {
           reject(new Error(error.errorMessage || 'Failed to update player data'));
         }
       );
+    });
+  }
+  /**
+   * Execute a CloudScript function
+   * @param functionName Name of the CloudScript function to execute
+   * @param functionParameter Parameters to pass to the function
+   * @returns Result of the CloudScript execution
+   */
+  async executeCloudScript(functionName: string, functionParameter: Record<string, unknown> = {}): Promise<{
+    functionResult: unknown;
+    logs?: { message: string }[];
+  }> {
+    if (!this.isLoggedIn()) {
+      throw new Error('User must be logged in to execute CloudScript');
+    }
+
+    console.log(`Executing CloudScript function: ${functionName}`);
+    
+    return new Promise((resolve, reject) => {
+      PlayFab.PlayFabClient.ExecuteCloudScript({
+        FunctionName: functionName,
+        FunctionParameter: functionParameter,
+        GeneratePlayStreamEvent: true,
+      }, (result: { data?: { FunctionResult?: unknown; Logs?: { message: string }[] }; error?: unknown }) => {
+        if (result.error) {
+          console.error('Error executing CloudScript:', result.error);
+          reject(result.error);
+          return;
+        }
+
+        if (!result.data) {
+          console.error('CloudScript execution error: No data returned');
+          reject(new Error('CloudScript execution failed: No data returned'));
+          return;
+        }
+
+        resolve({
+          functionResult: result.data.FunctionResult,
+          logs: result.data.Logs,
+        });
+      });
     });
   }
 }

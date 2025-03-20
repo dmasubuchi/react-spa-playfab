@@ -17,6 +17,7 @@
     "@azure/identity": "^4.8.0",
     "@azure/keyvault-secrets": "^4.9.0",
     "@azure/storage-blob": "^12.27.0",
+    "@azure/storage-queue": "^12.14.0",
     "playfab-sdk": "^2.170.250314",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
